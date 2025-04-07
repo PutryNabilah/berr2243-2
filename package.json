@@ -1,0 +1,24 @@
+{
+  "name": "berr2243-2",
+  "version": "1.0.0",
+  "description": "��#\u0000 \u0000b\u0000e\u0000r\u0000r\u00002\u00002\u00004\u00003\u0000-\u00002\u0000\r\u0000 \u0000",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PutryNabilah/berr2243-2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/PutryNabilah/berr2243-2/issues"
+  },
+  "homepage": "https://github.com/PutryNabilah/berr2243-2#readme",
+  "dependencies": {
+    "mongodb": "^6.15.0"
+  }
+}
