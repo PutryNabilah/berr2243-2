@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/PutryNabilah/berr2243-2#readme",
   "dependencies": {
+    "express": "^5.1.0",
     "mongodb": "^6.15.0"
   }
 }
