@@ -1,6 +1,6 @@
 const express = require('express');
 const {MongoClient} = require('mongodb');
-const port = 3000;
+const port = 3000
 
 const app = express();
 app.use(express.json());
