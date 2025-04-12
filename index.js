@@ -8,7 +8,7 @@ app.use(express.json());
 let db;
 
 async function connectToMongoDB() {
-    const uri = 'mongodb://localhost:27017';
+    const uri = "mongodb://localhost:27017";
     const client = new MongoClient(uri);
 
     try {
@@ -48,7 +48,7 @@ app.patch('/rides/:id', async (req, res) => {
     try {
         const result = await db.collection('rides').updateOne(
             {_id: new ObjectId(req.params.id)},
-            {$set:{status: req.body.status}}
+            {$set: {status: req.body.status}}
         );
         
         if (result.modifiedCount === 0) {
@@ -63,7 +63,9 @@ app.patch('/rides/:id', async (req, res) => {
 
 app.delete('/rides/:id', async (req, res) => {
     try {
-        const result = await db.collection('rides').deleteOne({_id: new ObjectId(req.params.id)});
+        const result = await db.collection('rides').deleteOne(
+            {_id: new ObjectId(req.params.id)}
+        );
         
         if (result.deletedCount === 0) {
             return res.status(404).json({error: "Ride not found"});
