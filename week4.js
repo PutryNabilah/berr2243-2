@@ -25,10 +25,6 @@ app.listen(port, () => {
     console.log('Server running on port ${port}');
 });
 
-// Use Case: Customer Registration
-// Endpoint: /users
-// Method: POST
-// Status Codes: 201 Created, 400 Bad Request
 app.post('/users', async (req, res) => {
     try {
         const { username, password, email } = req.body;
@@ -39,10 +35,6 @@ app.post('/users', async (req, res) => {
     }
 });
 
-// Use Case: Customer Login
-// Endpoint: /auth/login
-// Method: POST
-// Status Codes: 200 OK, 401 Unauthorized
 app.post('/auth/login', async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -53,9 +45,6 @@ app.post('/auth/login', async (req, res) => {
     }
 });
 
-// Use Case: Customer View Profile
-// Endpoint: /users/{id}/profile
-// Method: GET
 app.get('/users/:id/profile', async (req, res) => {
     try {
         const userId = req.params.id;
@@ -72,7 +61,6 @@ app.get('/users/:id/profile', async (req, res) => {
     }
 });
 
-//GET /rides - Fetch all rides 
 app.get('/rides', async (req, res) => {
     try {
         const rides = await db.collection('rides').find().toArray();
@@ -81,7 +69,6 @@ app.get('/rides', async (req, res) => {
     }
 });
 
-// POST /rides - Create a new ride
 app.post('/rides', async (req, res) => {
     try {
         const result = await db.collection('rides').insertOne(req.body);
@@ -91,7 +78,6 @@ app.post('/rides', async (req, res) => {
     }
 });
 
-// PATCH /rides/:id - Update ride status 
 app.patch('/rides/:id', async (req, res) => {
     try {
         const result = await db.collection('rides').updateOne(
@@ -110,7 +96,6 @@ app.patch('/rides/:id', async (req, res) => {
     }
 });
 
-// DELETE /rides/:id - Cancel a ride
 app.delete('/rides/:id', async (req, res) => {
     try {
         const result = await db.collection('rides').deleteOne(
@@ -127,10 +112,6 @@ app.delete('/rides/:id', async (req, res) => {
     }
 });
 
-// Use Case: Customer Registration
-// Endpoint: /users
-// Method: POST
-// Status Codes: 201 Created, 400 Bad Request
 app.post('/drivers', async (req, res) => {
     try {
         const { username, password, email } = req.body;
@@ -141,10 +122,6 @@ app.post('/drivers', async (req, res) => {
     }
 });
 
-// Use Case: Update Driver Status
-// Endpoint: /drivers/{id}/status
-// Method: PATCH
-// Status Codes: 200 OK, 404 Not Found
 app.patch('/drivers/:id/status', async (req, res) => {
     try {
         const driverId = req.params.id;
@@ -162,13 +139,10 @@ app.patch('/drivers/:id/status', async (req, res) => {
             res.status(404).json({ error: "Driver not found" });
         }
     } catch (err) {
-        res.status(400).json({ error: "Bad Request: Invalid driver ID or data" });
+        res.status(400).json({ error: "Invalid driver ID or data" });
     }
 });
 
-// Use Case: Driver View Earnings
-// Endpoint: /drivers/{id}/earnings
-// Method: GET
 app.get('/drivers/:id/earnings', async (req, res) => {
     try {
         const driverId = req.params.id;
@@ -176,17 +150,13 @@ app.get('/drivers/:id/earnings', async (req, res) => {
         if (driver) {
             res.status(200).json({ earnings: driver.earnings || 0 });
         } else {
-            res.status(404).json({ error: "Not Found: Driver not found" });
+            res.status(404).json({ error: "Driver not found" });
         }
     } catch (err) {
-        res.status(400).json({ error: "Bad Request: Invalid driver ID" });
+        res.status(400).json({ error: "Invalid driver ID" });
     }
 });
 
-// Use Case: Block User (Admin)
-// Endpoint: /admin/users/{id}
-// Method: DELETE
-// Status Codes: 204 No Content, 403 Forbidden
 app.delete('/admin/users/:id', async (req, res) => {
     try {
         const userId = req.params.id;
@@ -198,13 +168,10 @@ app.delete('/admin/users/:id', async (req, res) => {
             res.status(404).json({ error: "User not found" });
         }
     } catch (err) {
-        res.status(400).json({ error: "Invalid user ID" });
+        res.status(403).json({ error: "Forbidden" });
     }
 });
 
-// Use Case: View System Analytics (Admin)
-// Endpoint: /admin/analytics
-// Method: GET
 app.get('/admin/analytics', async (req, res) => {
     try {
         const totalUsers = await db.collection('users').countDocuments();
