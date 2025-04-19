@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Rides Dashboard</title>
+  <style>
+    body { font-family: sans-serif; }
+    .ride-card { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+    .ride-info { margin-bottom: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Current Rides</h1>
+  <div id="rides-container">
+    </div>
+
+  <script>
+    // Replace this with the actual JSON data fetched from your API
+    const ridesData = [
+      { "_id": "someObjectId1", "pickuplocation": "Central Park", "destination": "Times Square", "driverId": "DRIVER123", "status": "requested" },
+      { "_id": "anotherObjectId2", "pickuplocation": "Airport", "destination": "Hotel", "driverId": "DRIVER456", "status": "scheduled" }
+    ];
+
+    const ridesContainer = document.getElementById('rides-container');
+
+    ridesData.forEach(ride => {
+      const rideCard = document.createElement('div');
+      rideCard.classList.add('ride-card');
+
+      const pickup = document.createElement('p');
+      pickup.classList.add('ride-info');
+      pickup.textContent = 'Pickup: ${ride.pickuplocation}';
+
+      const destination = document.createElement('p');
+      destination.classList.add('ride-info');
+      destination.textContent = 'Destination: ${ride.destination}';
+
+      const driver = document.createElement('p');
+      driver.classList.add('ride-info');
+      driver.textContent = 'Driver ID: ${ride.driverId}';
+
+      const status = document.createElement('p');
+      status.classList.add('ride-info');
+      status.textContent = 'Status: ${ride.status}';
+
+      rideCard.appendChild(pickup);
+      rideCard.appendChild(destination);
+      rideCard.appendChild(driver);
+      rideCard.appendChild(status);
+
+      ridesContainer.appendChild(rideCard);
+    });
+  </script>
+</body>
+</html>

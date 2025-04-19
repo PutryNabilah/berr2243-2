@@ -1,78 +1,56 @@
-const express = require('express');
-const {MongoClient} = require('mongodb');
-const port = 3000
 
-const app = express();
-app.use(express.json());
 
-let db;
-
-async function connectToMongoDB() {
-    const uri = "mongodb://localhost:27017";
-    const client = new MongoClient(uri);
-
-    try {
-        await client.connect();
-        console.log('Connected to MongoDB');
-
-        db = client.db('testdb'); // Replace 'testdb' with your database name
-    } catch (err) {
-        console.error('Error connecting to MongoDB:', err);
-    }
-}
-connectToMongoDB();
-
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-});
-
-app.get('/rides', async (req, res) => {
+//GET /rides - Fetch all rides 
+app.get('/rides', async (requ, res) => {
     try {
         const rides = await db.collection('rides').find().toArray();
-        res.status(200).json(rides);
     } catch (err) {
-        res.status(500).json({error: "Error fetching data"});
+        res.status(500).json({ error: "Failed to fetch rides"});
     }
 });
 
-app.post('/rides', async (req, res) => {
+// POST /rides - Create a new ride
+app.post('/rides', async (requestAnimationFrame, res) => {
     try {
         const result = await db.collection('rides').insertOne(req.body);
-        res.status(201).json({id: result.insertedId});
-    } catch (err) {
-        res.status(400).json({error: "Error inserting data"});
+        res.status(201).json({ id: result.insertedId });
+    }  catch  (err) {
+        res.status(400).json({ error: "Invalid ride data"});
     }
 });
 
+// PATCH /rides/:id - Update ride status 
 app.patch('/rides/:id', async (req, res) => {
     try {
         const result = await db.collection('rides').updateOne(
-            {_id: new ObjectId(req.params.id)},
-            {$set: {status: req.body.status}}
+            {_id: new ObjectId (req.params.id) },
+            { $set: { status: req.body.status } }
         );
-        
-        if (result.modifiedCount === 0) {
-            return res.status(404).json({error: "Ride not found"});
-        }
-        res.status(200).json({updated: result.modifiedCount});
+
+    if (result.modifiedCount === 0) {
+        return res.status(404).json({ error: "Ride not found" });
+    }  
+    res.status(200).json ({ update: result.modifiedCount });
 
     } catch (err) {
-        res.status(400).json({error: "Error updating data"});
+        // Handle invalid ID format or DB errors
+        res.status(400).json({ error: "Invalid ride ID or data" });
     }
 });
 
+// DELETE /rides/:id - Cancel a ride
 app.delete('/rides/:id', async (req, res) => {
     try {
         const result = await db.collection('rides').deleteOne(
-            {_id: new ObjectId(req.params.id)}
+            {_id: new ObjectId(req.params.id) }
         );
-        
-        if (result.deletedCount === 0) {
-            return res.status(404).json({error: "Ride not found"});
+
+        if (result.deleteCount === 0) {
+            return res.status(404).json({ error: "Ride not found" });
         }
-        res.status(200).json({deleted: result.deletedCount});
+        res.status(200).json({ deleted: result.deleteCount });
 
     } catch (err) {
-        res.status(400).json({error: "Error deleting data"});
+        res.status(400).json({ error: "Invalid"});
     }
 });

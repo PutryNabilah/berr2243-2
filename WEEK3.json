@@ -1,0 +1,16 @@
+[
+    {
+      "_id": "someObjectId1",
+      "pickuplocation": "Central Park",
+      "destination": "Times Square",
+      "driverId": "DRIVER123",
+      "status": "requested"
+    },
+    {
+      "_id": "anotherObjectId2",
+      "pickuplocation": "Airport",
+      "destination": "Hotel",
+      "driverId": "DRIVER456",
+      "status": "scheduled"
+    }
+  ]
