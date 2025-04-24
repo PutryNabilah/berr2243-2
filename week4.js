@@ -14,7 +14,7 @@ async function connectToMongoDB() {
     try {
         await client.connect();
         console.log("Connected to MongoDB!");
-        db = client.db("testdb"); 
+        db = client.db("JPJeQDB"); 
     } catch (err) {
         console.error("Error:", err);
     }
@@ -22,164 +22,153 @@ async function connectToMongoDB() {
 connectToMongoDB();
 
 app.listen(port, () => {
-    console.log('Server running on port ${port}');
+    console.log(`Server running on port ${port}`);
 });
 
-app.post('/users', async (req, res) => {
+// Use Case: Customer Registration
+// Endpoint: /customers/register
+// Method: POST
+// Status Codes: 201 Created, 400 Bad Request
+app.post('/customers/register', async (req, res) => {
     try {
-        const { username, password, email } = req.body;
-        const result = await db.collection('users').insertOne({ username, password, email });
+        const { username, password, idnumber } = req.body;
+        const result = await db.collection('customers').insertOne({ username, password, idnumber });
         res.status(201).json({ id: result.insertedId });
     } catch (err) {
         res.status(400).json({ error: "Invalid user data" });
     }
 });
 
-app.post('/auth/login', async (req, res) => {
+// Use Case: Customer Login
+// Endpoint: /customers/login
+// Method: POST
+// Status Codes: 200 OK, 401 Unauthorized
+app.post('/customers/login', async (req, res) => {
     try {
-        const { username, password } = req.body;
-        const user = await db.collection('users').findOne({ username, password });
-        res.status(200).json({ userId: user._id });
+        const { idnumber, password } = req.body;
+        const customer = await db.collection('customers').findOne({ idnumber, password });
+        res.status(200).json({ customerId: customer._id });
     } catch (err) {
-        res.status(401).json({ error: "Invalid user data" });
+        res.status(400).json({ error: "Invalid customer data" });
     }
 });
 
-app.get('/users/:id/profile', async (req, res) => {
+// Use Case: Obtain queueing number
+// Endpoint: /queue/obtain/:customerId
+// Method: POST (as it's creating a new queue entry)
+// Status Codes: 201 Created, 503 Service Unavailable (if queue system is down or full)
+app.post('/queue/obtain/:customerId', async (req, res) => {
     try {
-        const userId = req.params.id;
-        const user = await db.collection('users').findOne({ _id: new ObjectId(userId) });
-        if (user) {
-            // Exclude sensitive information like password before sending the profile
-            const { password, ...profile } = user;
-            res.status(200).json(profile);
+        const { customerId } = req.params;
+        if (!ObjectId.isValid(customerId)) {
+            return res.status(400).json({ error: "Invalid customer ID" });
+        }
+
+        const customer = await db.collection('customers').findOne({ _id: new ObjectId(customerId) });
+        if (!customer) {
+            return res.status(400).json({ error: "Customer not found" });
+        }
+
+        const nextQueueNumber = await getNextQueueNumber(); // Placeholder function
+        const result = await db.collection('queue').insertOne({ customerId: new ObjectId(customerId), number: nextQueueNumber, timestamp: new Date() });
+        res.status(201).json({ queueNumber: nextQueueNumber });
+    } catch (err) {
+        console.error("Error obtaining queue number:", err);
+        res.status(503).json({ error: "Failed to obtain queue number" });
+    }
+});
+
+async function getNextQueueNumber() {
+    // In a real system, this would involve atomic operations to ensure unique numbers
+    const lastQueueEntry = await db.collection('queue').find().sort({ number: -1 }).limit(1).toArray();
+    if (lastQueueEntry.length > 0) {
+        return lastQueueEntry[0].number + 1;
+    }
+    return 1;
+}
+
+// Use Case: Update Queueing Number
+// Endpoint: /staff/queue/next
+// Method: PATCH
+// Status Codes: 200 OK, 404 Not Found
+app.patch('/staff/queue/next', async (req, res) => {
+    try {
+        const nextInQueue = await db.collection('queue').findOne({ served: { $ne: true } }, { sort: { number: 1 } });
+        if (nextInQueue) {
+            await db.collection('queue').updateOne({ _id: nextInQueue._id }, { $set: { served: true, servedAt: new Date() } });
+            res.status(200).json({ message: `Calling queue number ${nextInQueue.number}` });
         } else {
-            res.status(404).json({ error: "Not Found: User not found" });
+            res.status(404).json({ message: "Queue is empty" });
         }
     } catch (err) {
-        res.status(400).json({ error: "Bad Request: Invalid user ID" });
+        console.error("Error updating queue:", err);
+        res.status(500).json({ error: "Failed to update queue" });
     }
 });
 
-app.get('/rides', async (req, res) => {
+// Use Case: Cancel Queue Entry
+// Endpoint: /staff/queue/cancel/:queueNumber
+// Method: DELETE
+app.delete('/staff/queue/cancel/:queueNumber', async (req, res) => {
     try {
-        const rides = await db.collection('rides').find().toArray();
-    } catch (err) {
-        res.status(500).json({ error: "Failed to fetch rides"});
-    }
-});
-
-app.post('/rides', async (req, res) => {
-    try {
-        const result = await db.collection('rides').insertOne(req.body);
-        res.status(201).json({ id: result.insertedId });
-    }  catch  (err) {
-        res.status(400).json({ error: "Invalid ride data"});
-    }
-});
-
-app.patch('/rides/:id', async (req, res) => {
-    try {
-        const result = await db.collection('rides').updateOne(
-            {_id: new ObjectId (req.params.id) },
-            { $set: { status: req.body.status } }
-        );
-
-    if (result.modifiedCount === 0) {
-        return res.status(404).json({ error: "Ride not found" });
-    }  
-    res.status(200).json ({ update: result.modifiedCount });
-
-    } catch (err) {
-        // Handle invalid ID format or DB errors
-        res.status(400).json({ error: "Invalid ride ID or data" });
-    }
-});
-
-app.delete('/rides/:id', async (req, res) => {
-    try {
-        const result = await db.collection('rides').deleteOne(
-            {_id: new ObjectId(req.params.id) }
-        );
-
-        if (result.deleteCount === 0) {
-            return res.status(404).json({ error: "Ride not found" });
-        }
-        res.status(200).json({ deleted: result.deleteCount });
-
-    } catch (err) {
-        res.status(400).json({ error: "Invalid"});
-    }
-});
-
-app.post('/drivers', async (req, res) => {
-    try {
-        const { username, password, email } = req.body;
-        const result = await db.collection('drivers').insertOne({ username, password, email });
-        res.status(201).json({ id: result.insertedId });
-    } catch (err) {
-        res.status(400).json({ error: "Invalid driver data" });
-    }
-});
-
-app.patch('/drivers/:id/status', async (req, res) => {
-    try {
-        const driverId = req.params.id;
-        const { status } = req.body;
-        if (!status) {
-            return res.status(400).json({ error: "Bad Request: Missing status in request body" });
-        }
-        const result = await db.collection('drivers').updateOne(
-            { _id: new ObjectId(driverId) },
-            { $set: { status } }
-        );
-        if (result.modifiedCount > 0) {
-            res.status(200).json({ updated: result.modifiedCount });
+        const { queueNumber } = req.params;
+        const result = await db.collection('queue').deleteOne({ number: parseInt(queueNumber) });
+        if (result.deletedCount > 0) {
+            res.status(204).send();
         } else {
-            res.status(404).json({ error: "Driver not found" });
+            res.status(404).json({ error: `Queue number ${queueNumber} not found` });
         }
     } catch (err) {
-        res.status(400).json({ error: "Invalid driver ID or data" });
+        console.error("Error cancelling queue entry:", err);
+        res.status(400).json({ error: "Invalid queue number" });
     }
 });
 
-app.get('/drivers/:id/earnings', async (req, res) => {
+// Use Case: Manages customer accounts
+// Endpoint: /admin/customers
+// Method: GET
+// Status Codes: 200 OK
+app.get('/admin/customers', async (req, res) => {
     try {
-        const driverId = req.params.id;
-        const driver = await db.collection('drivers').findOne({ _id: new ObjectId(driverId) }, { projection: { earnings: 1 } });
-        if (driver) {
-            res.status(200).json({ earnings: driver.earnings || 0 });
-        } else {
-            res.status(404).json({ error: "Driver not found" });
-        }
+        const customers = await db.collection('customers').find({}, { projection: { password: 0 } }).toArray();
+        res.status(200).json(customers);
     } catch (err) {
-        res.status(400).json({ error: "Invalid driver ID" });
+        console.error("Error fetching customers:", err);
+        res.status(500).json({ error: "Failed to fetch customer accounts" });
     }
 });
 
-app.delete('/admin/users/:id', async (req, res) => {
+// Endpoint: /admin/customers/:id
+// Method: DELETE
+// Status Codes: 204 No Content, 404 Not Found, 403 Forbidden (if not admin)
+app.delete('/admin/customers/:id', async (req, res) => {
+    // In a real application, you'd need to implement authentication and authorization
+    // to ensure only admins can perform this action.
     try {
-        const userId = req.params.id;
-        const result = await db.collection('users').deleteOne({ _id: new ObjectId(userId) });
+        const customerId = req.params.id;
+        const result = await db.collection('customers').deleteOne({ _id: new ObjectId(customerId) });
 
         if (result.deletedCount > 0) {
-            res.status(204).send(); 
+            res.status(204).send();
         } else {
-            res.status(404).json({ error: "User not found" });
+            res.status(404).json({ error: "Customer not found" });
         }
     } catch (err) {
-        res.status(403).json({ error: "Forbidden" });
+        console.error("Error deleting customer:", err);
+        res.status(400).json({ error: "Invalid customer ID" });
     }
 });
 
-app.get('/admin/analytics', async (req, res) => {
+// Use Case: Generates system-wide reports (Admin)
+// Endpoint: /admin/analytics
+// Method: GET
+app.get('/admin/reports', async (req, res) => {
     try {
-        const totalUsers = await db.collection('users').countDocuments();
-        const totalDrivers = await db.collection('drivers').countDocuments();
-        const totalRides = await db.collection('rides').countDocuments();
+        const totalCustomers = await db.collection('customers').countDocuments();
+        const queueLength = await db.collection('queue').countDocuments();
 
-        res.status(200).json({ totalUsers, totalDrivers, totalRides });
+        res.status(200).json({ totalCustomers, currentQueueLength: queueLength });
     } catch (err) {
-        res.status(500).json({ error: "Failed to fetch system analytics" });
+        res.status(500).json({ error: "Failed to generate system reports" });
     }
 });
